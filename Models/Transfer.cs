@@ -11,10 +11,10 @@ namespace atm.Models
         public int TransactionID { get; set; }
 
         [Required]
-        public int SenderID  { get; set; }
+        public string SenderEmail  { get; set; }
 
         [Required]
-        public int ReceiverID { get; set; }
+        public string RecipientAccount { get; set; }
 
         [Required]
         public float Amount { get; set; }
