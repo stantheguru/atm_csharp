@@ -62,8 +62,9 @@ namespace atm.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("PIN")
-                        .HasColumnType("int");
+                    b.Property<string>("PIN")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("RegistrationDate")
                         .HasColumnType("datetime2");
@@ -81,8 +82,8 @@ namespace atm.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TransactionID"), 1L, 1);
 
-                    b.Property<int>("TransactionAmount")
-                        .HasColumnType("int");
+                    b.Property<float>("TransactionAmount")
+                        .HasColumnType("real");
 
                     b.Property<DateTime>("TransactionDate")
                         .HasColumnType("datetime2");
@@ -123,11 +124,13 @@ namespace atm.Migrations
                     b.Property<float>("Amount")
                         .HasColumnType("real");
 
-                    b.Property<int>("ReceiverID")
-                        .HasColumnType("int");
+                    b.Property<string>("RecipientAccount")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("SenderID")
-                        .HasColumnType("int");
+                    b.Property<string>("SenderEmail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("TransactionID")
                         .HasColumnType("int");

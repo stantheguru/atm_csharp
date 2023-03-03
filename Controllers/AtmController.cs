@@ -11,10 +11,27 @@ namespace atm.Controllers
 {
     public class AtmController : Controller
     {
+
         SqlConnection conn = new SqlConnection(@"Server=DESKTOP-OFRUC79;database=atm;integrated security=true");
 
         [Route("api/[controller]")]
-     
+
+
+        //Get a transaction
+        [Route("/test")]
+        [HttpGet]
+        public async Task<string> Test()
+        {
+            
+            JObject job = new JObject();
+           
+
+           job.Add("TransactionID", 9);
+                job.Add("TransactionAmount", 1000);
+            
+            return job.ToString();
+            
+        }
 
         //Register Customer
         [Route("register")]

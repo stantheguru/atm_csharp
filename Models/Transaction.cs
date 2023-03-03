@@ -11,7 +11,7 @@ namespace atm.Models
         public int TransactionTypeID { get; set; }
 
         [Required]
-        public int TransactionAmount { get; set; }
+        public float TransactionAmount { get; set; }
 
         [Required]
         public DateTime TransactionDate { get; set; }

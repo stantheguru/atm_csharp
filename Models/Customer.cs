@@ -23,7 +23,7 @@ namespace atm.Models
         public string AccountNumber { get; set; }
 
         [Required]
-        public int PIN { get; set; }
+        public string PIN { get; set; }
 
         [Required]
         public string MobileNumber { get; set; }
