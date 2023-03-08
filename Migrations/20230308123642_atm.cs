@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -13,19 +14,19 @@ namespace atm.Migrations
                 name: "Customers",
                 columns: table => new
                 {
-                    CustomerID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ID = table.Column<int>(type: "int", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    KRAPIN = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AccountName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AccountNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PIN = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    MobileNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CustomerID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ID = table.Column<int>(type: "integer", nullable: false),
+                    Email = table.Column<string>(type: "text", nullable: false),
+                    KRAPIN = table.Column<string>(type: "text", nullable: false),
+                    AccountName = table.Column<string>(type: "text", nullable: false),
+                    AccountNumber = table.Column<string>(type: "text", nullable: false),
+                    PIN = table.Column<string>(type: "text", nullable: false),
+                    MobileNumber = table.Column<string>(type: "text", nullable: false),
                     Limit = table.Column<float>(type: "real", nullable: false),
                     AvailableBalance = table.Column<float>(type: "real", nullable: false),
                     ActualBalance = table.Column<float>(type: "real", nullable: false),
-                    RegistrationDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    RegistrationDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -36,11 +37,11 @@ namespace atm.Migrations
                 name: "Transactions",
                 columns: table => new
                 {
-                    TransactionID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    TransactionTypeID = table.Column<int>(type: "int", nullable: false),
+                    TransactionID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TransactionTypeID = table.Column<int>(type: "integer", nullable: false),
                     TransactionAmount = table.Column<float>(type: "real", nullable: false),
-                    TransactionDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    TransactionDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -51,9 +52,9 @@ namespace atm.Migrations
                 name: "TransactionTypes",
                 columns: table => new
                 {
-                    TransactionTypeID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    TransactionTypeName = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    TransactionTypeID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TransactionTypeName = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -64,13 +65,13 @@ namespace atm.Migrations
                 name: "Transfers",
                 columns: table => new
                 {
-                    TransferID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    TransactionID = table.Column<int>(type: "int", nullable: false),
-                    SenderEmail = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    RecipientAccount = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TransferID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TransactionID = table.Column<int>(type: "integer", nullable: false),
+                    SenderEmail = table.Column<string>(type: "text", nullable: false),
+                    RecipientAccount = table.Column<string>(type: "text", nullable: false),
                     Amount = table.Column<float>(type: "real", nullable: false),
-                    TransferDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    TransferDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -81,12 +82,12 @@ namespace atm.Migrations
                 name: "Withdrawals",
                 columns: table => new
                 {
-                    WithdrawalID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    TransactionID = table.Column<int>(type: "int", nullable: false),
-                    CustomerID = table.Column<int>(type: "int", nullable: false),
+                    WithdrawalID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TransactionID = table.Column<int>(type: "integer", nullable: false),
+                    CustomerID = table.Column<int>(type: "integer", nullable: false),
                     Amount = table.Column<float>(type: "real", nullable: false),
-                    WithdrawalDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    WithdrawalDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {

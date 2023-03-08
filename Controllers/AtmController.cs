@@ -2,8 +2,8 @@
 using System.Transactions;
 using atm.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using Newtonsoft.Json.Linq;
+using Npgsql;
 using NuGet.Protocol.Plugins;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
@@ -12,12 +12,12 @@ namespace atm.Controllers
     public class AtmController : Controller
     {
 
-        SqlConnection conn = new SqlConnection(@"Server=DESKTOP-OFRUC79;database=atm;integrated security=true");
-
+        NpgsqlConnection conn = new NpgsqlConnection("Server=localhost;Port=5432;Database=atm;User Id=postgres;Password=;Integrated Security=true;Pooling=true;");
+        
         [Route("api/[controller]")]
 
 
-        //Get a transaction
+        //Test 
         [Route("/test")]
         [HttpGet]
         public async Task<string> Test()
@@ -38,7 +38,7 @@ namespace atm.Controllers
         [HttpPost]
         public async Task<string> Post([FromForm] Customer customer)
         {
-
+            Console.WriteLine(customer.ID);
             JObject success = new JObject();
             string hashPIN = "";
             using (System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create())
@@ -58,20 +58,27 @@ namespace atm.Controllers
             try
             {
 
-                string query = "insert into Customers values(@ID,@Email, @KRAPIN, @AccountName, @AccountNumber, @PIN, @MobileNumber, @Limit, @AvailableBalance, @ActualBalance, @RegistrationDate)";
-                SqlCommand cmd = new SqlCommand(query, conn);
-                cmd.Parameters.Add(new SqlParameter("@ID", customer.ID));
-                cmd.Parameters.Add(new SqlParameter("@Email", customer.Email));
-                cmd.Parameters.Add(new SqlParameter("@KRAPIN", customer.KRAPIN));
-                cmd.Parameters.Add(new SqlParameter("@AccountName", customer.AccountName));
-                cmd.Parameters.Add(new SqlParameter("@AccountNumber", customer.AccountNumber));
-                cmd.Parameters.Add(new SqlParameter("@PIN", hashPIN));
-                cmd.Parameters.Add(new SqlParameter("@MobileNumber", customer.MobileNumber));
-                cmd.Parameters.Add(new SqlParameter("@Limit", customer.AvailableBalance));
-                cmd.Parameters.Add(new SqlParameter("@AvailableBalance", customer.AvailableBalance));
-                cmd.Parameters.Add(new SqlParameter("@ActualBalance", customer.ActualBalance));
-                cmd.Parameters.Add(new SqlParameter("@RegistrationDate", DateTime.Now));
+                string query = "insert into customers(id_number,email, kra_pin, account_name, account_number, pin, mobile_number, withdrawal_limit, available_balance, actual_balance, registration_date) values(@ID,@Email, @KRAPIN, @AccountName, @AccountNumber, @PIN, @MobileNumber, @WithdrawalLimit, @AvailableBalance, @ActualBalance, @RegistrationDate)";
+                NpgsqlCommand cmd = new NpgsqlCommand(query, conn);
+                cmd.Parameters.Add(new NpgsqlParameter("@ID", customer.ID));
+                cmd.Parameters.Add(new NpgsqlParameter("@Email", customer.Email));
+                cmd.Parameters.Add(new NpgsqlParameter("@KRAPIN", customer.KRAPIN));
+                cmd.Parameters.Add(new NpgsqlParameter("@AccountName", customer.AccountName));
+                cmd.Parameters.Add(new NpgsqlParameter("@AccountNumber", customer.AccountNumber));
+                cmd.Parameters.Add(new NpgsqlParameter("@PIN", hashPIN));
+                cmd.Parameters.Add(new NpgsqlParameter("@MobileNumber", customer.MobileNumber));
+                cmd.Parameters.Add(new NpgsqlParameter("@WithdrawalLimit", customer.WithdrawalLimit));
+                cmd.Parameters.Add(new NpgsqlParameter("@AvailableBalance", customer.AvailableBalance));
+                cmd.Parameters.Add(new NpgsqlParameter("@ActualBalance", customer.ActualBalance));
+                cmd.Parameters.Add(new NpgsqlParameter("@RegistrationDate", DateTime.Now));
 
+                string queryString = cmd.CommandText;
+                foreach (NpgsqlParameter param in cmd.Parameters)
+                {
+                    queryString = queryString.Replace(param.ParameterName, param.Value.ToString());
+                }
+
+                Console.WriteLine("Executing SQL query: " + queryString);
 
                 conn.Open();
                 int noOfRowsAffected = cmd.ExecuteNonQuery();
@@ -93,6 +100,7 @@ namespace atm.Controllers
             {
                 
                 string error = e.Message.ToString();
+                success.Add("error", error);
                 int index = error.IndexOf("The duplicate key value is");
                 if (index>0)
                 {
@@ -121,11 +129,11 @@ namespace atm.Controllers
         [HttpPost]
         public async Task<string> Login([FromForm] Login user)
         {
-            string sqlExists = "select CustomerID, Email, PIN, AccountName, MobileNumber, Limit from dbo.Customers where Email='" + user.Email + "'";
+            string sqlExists = "select CustomerID, Email, PIN, AccountName, MobileNumber, WithdrawalLimit from dbo.Customers where Email='" + user.Email + "'";
             
-            SqlCommand sqlCommand = new SqlCommand(sqlExists, conn);
+            NpgsqlCommand NpgsqlCommand = new NpgsqlCommand(sqlExists, conn);
             conn.Open();
-            SqlDataReader reader = sqlCommand.ExecuteReader();
+            NpgsqlDataReader reader = NpgsqlCommand.ExecuteReader();
             string exists = "NO";
             JObject job = new JObject();
             while (reader.Read())
@@ -134,12 +142,12 @@ namespace atm.Controllers
                 var PIN = reader["PIN"].ToString();
                 var mobile = reader["MobileNumber"].ToString();
                 var Name = reader["AccountName"].ToString();
-                var Limit = reader["Limit"].ToString();
+                var WithdrawalLimit = reader["WithdrawalLimit"].ToString();
 
                 job.Add("MobileNumber", mobile);
                 job.Add("AccountName", Name);
                 job.Add("CustomerID", CustomerID);
-                job.Add("Limit", Limit);
+                job.Add("WithdrawalLimit", WithdrawalLimit);
 
 
                 string hashPIN = "";
@@ -195,9 +203,9 @@ namespace atm.Controllers
             try
             {
                 string sqlBalance = "select ActualBalance, AvailableBalance from dbo.Customers where CustomerID='" + withdrawal.CustomerID + "'";
-                SqlCommand sqlCommand = new SqlCommand(sqlBalance, conn);
+                NpgsqlCommand NpgsqlCommand = new NpgsqlCommand(sqlBalance, conn);
                 conn.Open();
-                SqlDataReader reader = sqlCommand.ExecuteReader();
+                NpgsqlDataReader reader = NpgsqlCommand.ExecuteReader();
                 int noOfRowsAffected = 0;
                 while (reader.Read())
                 {
@@ -214,10 +222,10 @@ namespace atm.Controllers
                     conn.Open();
                    
                     string query = "insert into Transactions values(@TransactionTypeID, @TransactionAmount, @TransactionDate)";
-                    SqlCommand cmd = new SqlCommand(query, conn);
-                    cmd.Parameters.Add(new SqlParameter("@TransactionTypeID", 1));
-                    cmd.Parameters.Add(new SqlParameter("@TransactionAmount", withdrawal.Amount));
-                    cmd.Parameters.Add(new SqlParameter("@TransactionDate", DateTime.Now));
+                    NpgsqlCommand cmd = new NpgsqlCommand(query, conn);
+                    cmd.Parameters.Add(new NpgsqlParameter("@TransactionTypeID", 1));
+                    cmd.Parameters.Add(new NpgsqlParameter("@TransactionAmount", withdrawal.Amount));
+                    cmd.Parameters.Add(new NpgsqlParameter("@TransactionDate", DateTime.Now));
 
 
                     noOfRowsAffected = cmd.ExecuteNonQuery();
@@ -237,9 +245,9 @@ namespace atm.Controllers
                 if (noOfRowsAffected > 0)
                 {
                     string sqlTransaction = "select MAX(TransactionID) as id from dbo.Transactions";
-                    SqlCommand sqlId = new SqlCommand(sqlTransaction, conn);
+                    NpgsqlCommand sqlId = new NpgsqlCommand(sqlTransaction, conn);
                     conn.Open();
-                    SqlDataReader sqlDataReader = sqlId.ExecuteReader();
+                    NpgsqlDataReader sqlDataReader = sqlId.ExecuteReader();
                     
                     while (sqlDataReader.Read())
                     {
@@ -251,11 +259,11 @@ namespace atm.Controllers
 
                     //Save withdrawal
                     string query = "insert into Withdrawals values(@TransactionID,@CustomerID, @Amount, @WithdrawalDate)";
-                    SqlCommand cmd = new SqlCommand(query, conn);
-                    cmd.Parameters.Add(new SqlParameter("@TransactionID", TransactionID));
-                    cmd.Parameters.Add(new SqlParameter("@CustomerID", withdrawal.CustomerID));
-                    cmd.Parameters.Add(new SqlParameter("@Amount", withdrawal.Amount));
-                    cmd.Parameters.Add(new SqlParameter("@WithdrawalDate", DateTime.Now));
+                    NpgsqlCommand cmd = new NpgsqlCommand(query, conn);
+                    cmd.Parameters.Add(new NpgsqlParameter("@TransactionID", TransactionID));
+                    cmd.Parameters.Add(new NpgsqlParameter("@CustomerID", withdrawal.CustomerID));
+                    cmd.Parameters.Add(new NpgsqlParameter("@Amount", withdrawal.Amount));
+                    cmd.Parameters.Add(new NpgsqlParameter("@WithdrawalDate", DateTime.Now));
 
                     conn.Open();
                     rowsChanged = cmd.ExecuteNonQuery();
@@ -266,11 +274,11 @@ namespace atm.Controllers
                 if (rowsChanged > 0)
                 {
                     string sqUpdate = "UPDATE Customers SET ActualBalance=@ActualBalance, AvailableBalance=@AvailableBalance where CustomerID = @CustomerID";
-                    SqlCommand sq = new SqlCommand(sqUpdate, conn);
+                    NpgsqlCommand sq = new NpgsqlCommand(sqUpdate, conn);
 
-                    sq.Parameters.Add(new SqlParameter("@ActualBalance", Balance-withdrawal.Amount));
-                    sq.Parameters.Add(new SqlParameter("@AvailableBalance", AvailableBalance-withdrawal.Amount));
-                    sq.Parameters.Add(new SqlParameter("@CustomerID", withdrawal.CustomerID));
+                    sq.Parameters.Add(new NpgsqlParameter("@ActualBalance", Balance-withdrawal.Amount));
+                    sq.Parameters.Add(new NpgsqlParameter("@AvailableBalance", AvailableBalance-withdrawal.Amount));
+                    sq.Parameters.Add(new NpgsqlParameter("@CustomerID", withdrawal.CustomerID));
                     conn.Open();
                     int rowsAffected = sq.ExecuteNonQuery();
                     if (rowsAffected > 0)
@@ -304,9 +312,9 @@ namespace atm.Controllers
         {
             string query = "select * from dbo.Customers where Email='" + balance.Email + "'";
 
-            SqlCommand sqlCommand = new SqlCommand(query, conn);
+            NpgsqlCommand NpgsqlCommand = new NpgsqlCommand(query, conn);
             conn.Open();
-            SqlDataReader reader = sqlCommand.ExecuteReader();
+            NpgsqlDataReader reader = NpgsqlCommand.ExecuteReader();
             
             JObject job = new JObject();
             while (reader.Read())
@@ -342,10 +350,10 @@ namespace atm.Controllers
             try
             {
                 string sqlBalance = "select ActualBalance, AvailableBalance from dbo.Customers where Email='" + transfer.SenderEmail + "'";
-                SqlCommand sqlCommand = new SqlCommand(sqlBalance, conn);
+                NpgsqlCommand NpgsqlCommand = new NpgsqlCommand(sqlBalance, conn);
                 conn.Open();
                 Console.WriteLine(sqlBalance);
-                SqlDataReader reader = sqlCommand.ExecuteReader();
+                NpgsqlDataReader reader = NpgsqlCommand.ExecuteReader();
                 int noOfRowsAffected = 0;
                 while (reader.Read())
                 {
@@ -365,10 +373,10 @@ namespace atm.Controllers
                     conn.Open();
 
                     string query = "insert into Transactions values(@TransactionTypeID, @TransactionAmount, @TransactionDate)";
-                    SqlCommand cmd = new SqlCommand(query, conn);
-                    cmd.Parameters.Add(new SqlParameter("@TransactionTypeID", 2));
-                    cmd.Parameters.Add(new SqlParameter("@TransactionAmount", transfer.Amount));
-                    cmd.Parameters.Add(new SqlParameter("@TransactionDate", DateTime.Now));
+                    NpgsqlCommand cmd = new NpgsqlCommand(query, conn);
+                    cmd.Parameters.Add(new NpgsqlParameter("@TransactionTypeID", 2));
+                    cmd.Parameters.Add(new NpgsqlParameter("@TransactionAmount", transfer.Amount));
+                    cmd.Parameters.Add(new NpgsqlParameter("@TransactionDate", DateTime.Now));
 
 
                     noOfRowsAffected = cmd.ExecuteNonQuery();
@@ -389,9 +397,9 @@ namespace atm.Controllers
                 if (noOfRowsAffected > 0)
                 {
                     string sqlTransaction = "select MAX(TransactionID) as id from dbo.Transactions";
-                    SqlCommand sqlId = new SqlCommand(sqlTransaction, conn);
+                    NpgsqlCommand sqlId = new NpgsqlCommand(sqlTransaction, conn);
                     conn.Open();
-                    SqlDataReader sqlDataReader = sqlId.ExecuteReader();
+                    NpgsqlDataReader sqlDataReader = sqlId.ExecuteReader();
 
                     while (sqlDataReader.Read())
                     {
@@ -405,12 +413,12 @@ namespace atm.Controllers
 
                     //Save withdrawal
                     string query = "insert into Transfers values(@TransactionID,@SenderEmail, @RecipientAccount, @Amount, @TransferDate)";
-                    SqlCommand cmd = new SqlCommand(query, conn);
-                    cmd.Parameters.Add(new SqlParameter("@TransactionID", TransactionID));
-                    cmd.Parameters.Add(new SqlParameter("@SenderEmail", transfer.SenderEmail));
-                    cmd.Parameters.Add(new SqlParameter("@RecipientAccount", transfer.RecipientAccount));
-                    cmd.Parameters.Add(new SqlParameter("@Amount", transfer.Amount));
-                    cmd.Parameters.Add(new SqlParameter("@TransferDate", DateTime.Now));
+                    NpgsqlCommand cmd = new NpgsqlCommand(query, conn);
+                    cmd.Parameters.Add(new NpgsqlParameter("@TransactionID", TransactionID));
+                    cmd.Parameters.Add(new NpgsqlParameter("@SenderEmail", transfer.SenderEmail));
+                    cmd.Parameters.Add(new NpgsqlParameter("@RecipientAccount", transfer.RecipientAccount));
+                    cmd.Parameters.Add(new NpgsqlParameter("@Amount", transfer.Amount));
+                    cmd.Parameters.Add(new NpgsqlParameter("@TransferDate", DateTime.Now));
 
                     conn.Open();
                     rowsChanged = cmd.ExecuteNonQuery();
@@ -422,11 +430,11 @@ namespace atm.Controllers
                 if (rowsChanged > 0)
                 {
                     string sqUpdate = "UPDATE Customers SET ActualBalance=@ActualBalance, AvailableBalance=@AvailableBalance where Email = @SenderEmail";
-                    SqlCommand sq = new SqlCommand(sqUpdate, conn);
+                    NpgsqlCommand sq = new NpgsqlCommand(sqUpdate, conn);
 
-                    sq.Parameters.Add(new SqlParameter("@ActualBalance", Balance - transfer.Amount));
-                    sq.Parameters.Add(new SqlParameter("@AvailableBalance", AvailableBalance - transfer.Amount));
-                    sq.Parameters.Add(new SqlParameter("@SenderEmail", transfer.SenderEmail));
+                    sq.Parameters.Add(new NpgsqlParameter("@ActualBalance", Balance - transfer.Amount));
+                    sq.Parameters.Add(new NpgsqlParameter("@AvailableBalance", AvailableBalance - transfer.Amount));
+                    sq.Parameters.Add(new NpgsqlParameter("@SenderEmail", transfer.SenderEmail));
                     conn.Open();
                     senderRows = sq.ExecuteNonQuery();
                     conn.Close();
@@ -441,9 +449,9 @@ namespace atm.Controllers
                 if (senderRows > 0)
                 {
                     string sqlRecipient = "select ActualBalance, AvailableBalance, AccountName from dbo.Customers where AccountNumber = '"+transfer.RecipientAccount + "'";
-                    SqlCommand recipientCommand = new SqlCommand(sqlRecipient, conn);
+                    NpgsqlCommand recipientCommand = new NpgsqlCommand(sqlRecipient, conn);
                     conn.Open();
-                    SqlDataReader sqlDataReader = recipientCommand.ExecuteReader();
+                    NpgsqlDataReader sqlDataReader = recipientCommand.ExecuteReader();
 
                     while (sqlDataReader.Read())
                     {
@@ -455,11 +463,11 @@ namespace atm.Controllers
                     conn.Close();
 
                     string sqUpdate = "UPDATE Customers SET ActualBalance=@ActualBalance, AvailableBalance=@AvailableBalance where AccountNumber = @RecipientAccount";
-                    SqlCommand sq = new SqlCommand(sqUpdate, conn);
+                    NpgsqlCommand sq = new NpgsqlCommand(sqUpdate, conn);
 
-                    sq.Parameters.Add(new SqlParameter("@ActualBalance", Balance + transfer.Amount));
-                    sq.Parameters.Add(new SqlParameter("@AvailableBalance", AvailableBalance + transfer.Amount));
-                    sq.Parameters.Add(new SqlParameter("@RecipientAccount", transfer.RecipientAccount));
+                    sq.Parameters.Add(new NpgsqlParameter("@ActualBalance", Balance + transfer.Amount));
+                    sq.Parameters.Add(new NpgsqlParameter("@AvailableBalance", AvailableBalance + transfer.Amount));
+                    sq.Parameters.Add(new NpgsqlParameter("@RecipientAccount", transfer.RecipientAccount));
                     conn.Open();
                     int recieverRows = sq.ExecuteNonQuery();
                     if (recieverRows > 0)

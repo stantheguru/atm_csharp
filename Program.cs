@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<DBContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseNpgsql("Server=localhost;Port=5432;Database=atm;User Id=postgres;Password=;Integrated Security=true;Pooling=true;"));
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

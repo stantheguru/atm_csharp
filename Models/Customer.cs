@@ -29,7 +29,7 @@ namespace atm.Models
         public string MobileNumber { get; set; }
 
         [Required]
-        public float Limit { get; set; }
+        public float WithdrawalLimit { get; set; }
 
         [Required]
         public float AvailableBalance { get; set; }
